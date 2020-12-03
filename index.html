@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Users CRUD</title>
+    <style>
+        input[type='submit'],
+        button,
+        [aria-label] {
+            cursor: pointer;
+        }
+
+        #spoiler {
+            display: none;
+        }
+
+        #customers {
+            font-family: Arial, Helvetica, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        #customers td,
+        #customers th {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        #customers tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        #customers tr:hover {
+            background-color: #ddd;
+        }
+
+        #customers th {
+            padding-top: 12px;
+            padding-bottom: 12px;
+            text-align: left;
+            background-color: #4CAF50;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="newForm" role="aria-hidden">
+        <form action="javascript:void(0);" method="POST" onsubmit="app.Add()">
+            <input type="text" id="add-user-name" placeholder="user name">
+            <input type="text" id="add-user-email" placeholder="user email">
+            <input type="submit" value="Submit">
+        </form>
+    </div>
+    <div id="updateForm" role="aria-hidden">
+        <form action="javascript:void(0);" method="POST" id="saveEdit" onsubmit="app.Edit()">
+            <input type="text" id="edit-user-name" placeholder="user name">
+            <input type="text" id="edit-user-email" placeholder="email">
+            <input type="hidden" id="edit-userId">
+            <input type="submit" value="Update" />
+        </form>
+    </div>
+    <p id="counter"></p>
+    <table>
+        <tbody id="customers">
+        </tbody>
+    </table>
+    <script>
+        var app = new function () {
+            this.el = document.getElementById('customers');
+            this.users = [{
+                username: 'user1', email: 'email1', userId: 1
+            }, {
+                username: 'user2', email: 'email2', userId: 3
+            }];
+            this.Count = function (data) {
+                var el = document.getElementById('counter');
+                var name = 'country';
+                if (data) {
+                    if (data > 1) {
+                        name = 'countries';
+                    }
+                    el.innerHTML = data + ' ' + name;
+                } else {
+                    el.innerHTML = 'No ' + name;
+                }
+            };
+            this.checkAll = function () {
+                console.log(document.getElementById("checkall").checked);
+                var isChecked = document.getElementById("checkall").checked;
+                var array = document.getElementsByTagName("input");
+                for (var ii = 0; ii < array.length; ii++) {
+                    console.log(array[ii].type);
+                    if (array[ii].type == "checkbox") {
+                        if (array[ii].className == 'userCheckBox') {
+                            if (isChecked) {
+                                array[ii].checked = true;
+                            } else {
+                                array[ii].checked = false;
+                            }
+                        }
+                    }
+                }
+            }
+            this.updateSelection = function (idname) {
+                console.log(document.getElementById(idname).checked);
+                var isChecked = document.getElementById(idname).checked;
+                console.log(isChecked);
+                var selectionItem = '';
+                this.users.forEach((item) => {
+                    if (item.userId == idname && selectionItem == '') {
+                        selectionItem = item
+                    }
+                })
+                var el1 = document.getElementById('edit-user-name');
+                var el2 = document.getElementById('edit-user-email');
+                var el3 = document.getElementById('edit-userId');
+                if (isChecked && selectionItem) {
+                    el1.value = selectionItem.username;
+                    el2.value = selectionItem.email;
+                    el3.value = selectionItem.userId;
+                    this.selectionItem = selectionItem;
+                } else {
+                    el1.value = '';
+                    el2.value = '';
+                    this.selectionItem = undefined;
+                }
+            }
+            this.FetchAll = function () {
+                document.getElementById('newForm').style.display = 'none';
+                document.getElementById('updateForm').style.display = 'none';
+                var data = '';
+                data += '<button onclick="app.addForm()">add</button></td><button onclick="app.updateForm()">Edit</button></td><td><button onclick="app.Delete()">Delete</button></td>'
+                if (this.users.length > 0) {
+                    // data += ' <table id="customers"><tr><th><input type="checkbox" onclick="app.checkAll()" id="checkall" name="checkAll" value="checkAll"></th><th> User Id</th><th> Username</th><th> Email</th> </tr> ';
+                    data += '<tr><th><input type="checkbox" onclick="app.checkAll()" id="checkall" name="checkAll" value="checkAll"></th><th> User Id</th><th> Username</th><th> Email</th> </tr> ';
+                    fetch('https://jsonplaceholder.typicode.com/posts/')
+                        .then((response) => {
+                            return response.json();
+                        })
+                        .then((json) => {
+                            console.log(json)
+                            this.users = json
+                            for (i = 0; i < this.users.length; i++) {
+                                this.users[i].username = this.users[i].title;
+                                this.users[i].email = this.users[i].body;
+                                this.users[i].userId = this.users[i].id;
+                                data += '<tr><td><input type="checkbox" class="userCheckBox" onclick="app.updateSelection(' + this.users[i].userId + ')" id="' + this.users[i].userId + '" name="users" value="Bike"></td><td>' + this.users[i].userId + '</td><td>' + this.users[i].username + '</td><td>' + this.users[i].email + '</td></tr>';
+                            }
+                            data += '</table >';
+                            return this.el.innerHTML = data;
+                        })
+                }
+            };
+            this.addForm = function () {
+                document.getElementById('newForm').style.display = 'block';
+                document.getElementById('updateForm').style.display = 'none';
+            }
+            this.updateForm = function () {
+                document.getElementById('newForm').style.display = 'none';
+                document.getElementById('updateForm').style.display = 'block';
+            }
+            this.Add = function () {
+                el1 = document.getElementById('add-user-name');
+                el2 = document.getElementById('add-user-email');
+                // Get the value
+                var username = el1.value;
+                var email = el2.value;
+                if (username && email) {
+                    this.users.push({ username, email, userId: this.users.length + 1 });
+                    el1.value = '';
+                    el2.value = '';
+                    this.FetchAll();
+                }
+            };
+            this.Edit = function (item) {
+                var el1 = document.getElementById('edit-user-name');
+                var el2 = document.getElementById('edit-user-email');
+                var el3 = document.getElementById('edit-userId');
+                var username = el1.value;
+                var email = el2.value;
+                var userId = el3.value
+                if (username && email) {
+                    // this.users.forEach((item, i) => {
+                    //     if (item.userId == userId) {
+                    // this.users[i] = { username, email, userId };
+                    fetch('https://jsonplaceholder.typicode.com/posts/' + userId, {
+                        method: 'PUT',
+                        body: JSON.stringify({
+                            id: userId,
+                            title: username,
+                            body: email,
+                        }),
+                        headers: {
+                            'Content-type': 'application/json; charset=UTF-8',
+                        },
+                    })
+                        .then((response) => response.json())
+                        .then((json) => console.log(json))
+                    // }
+                    // })
+                    el1.value = '';
+                    el2.value = '';
+                    this.FetchAll();
+                }
+            };
+            this.Delete = function (item) {
+                var isChecked = document.getElementById("checkall").checked;
+                if (isChecked) {
+                    this.users = [];
+                } else {
+                    this.users.forEach((item, i) => {
+                        if (this.selectionItem && this.selectionItem.userId && item.userId == this.selectionItem.userId) {
+                            // this.users.splice(i, 1);
+                            fetch('https://jsonplaceholder.typicode.com/posts/' + this.selectionItem.userId, {
+                                method: 'DELETE',
+                            })
+                        }
+                    })
+                }
+                this.FetchAll();
+            };
+        }
+        app.FetchAll();
+        function CloseInput() {
+            document.getElementById('spoiler').style.display = 'none';
+        }
+    </script>
+</body>
+
+</html>
